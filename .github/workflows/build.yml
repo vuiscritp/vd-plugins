@@ -11,13 +11,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Build
+      - name: Build Plugin
         run: |
-          npm install -g vd-cli
-          vd-cli build
+          # Không cần cài -g nữa, dùng npx cho nhẹ và chuẩn
+          npx vd-cli build
       - name: Deploy
         uses: JamesIves/github-pages-deploy-action@v4
         with:
-          folder: .
+          folder: . 
           branch: gh-pages
-          
