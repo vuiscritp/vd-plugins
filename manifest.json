@@ -1,12 +1,7 @@
 {
   "name": "QuickTranslate-VN",
-  "description": "Dịch tin nhắn sang tiếng Việt và cho phép khôi phục bản gốc ngay lập tức.",
-  "authors": [
-    {
-      "name": "Vui",
-      "id": "1299640665889837107"
-    }
-  ],
+  "description": "Dịch tin nhắn sang tiếng Việt ngay lập tức.",
+  "authors": [{ "name": "Vui", "id": "1299640665889837107" }],
   "main": "index.tsx",
   "hash": "1"
 }
