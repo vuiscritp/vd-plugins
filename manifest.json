@@ -7,6 +7,6 @@
       "id": "1299640665889837107"
     }
   ],
-  "main": "index.js",
+  "main": "index.tsx",
   "hash": "1"
 }
