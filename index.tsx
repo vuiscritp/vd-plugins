@@ -1,18 +1,19 @@
 import { metro, patcher, common } from "@vendetta";
-const { findByProps, findByName } = metro;
+const { findByProps, findByDisplayName } = metro;
 const { toast } = common;
 
-// Các module cần thiết của Discord
-const MessageStore = findByProps("getMessage", "getMessages");
-const { dispatch } = findByProps("dispatch");
+// Lấy các component UI từ Discord
+const { ActionSheetItem } = findByProps("ActionSheetItem");
 const ActionSheet = findByProps("openLazy", "hideActionSheet");
 
-// Lưu trữ bản gốc
+// Module xử lý tin nhắn
+const { dispatch } = findByProps("dispatch");
+
 const cache = new Map();
 
 async function translate(text) {
     try {
-        const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=vi&dt=t&q=${encodeURIComponent(text)}`);
+        const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=vi&dt=t&q=${encodeURI(text)}`);
         const data = await res.json();
         return data[0].map(x => x[0]).join("");
     } catch (e) {
@@ -22,18 +23,56 @@ async function translate(text) {
 
 export default {
     onLoad: () => {
-        // Patch vào MessageContextMenu (Menu khi nhấn giữ tin nhắn)
-        const MessageContextMenu = findByName("MessageContextMenu", false);
+        // Tìm menu chuột phải/nhấn giữ của tin nhắn
+        const MessageContextMenu = findByProps("MessageContextMenu")?.MessageContextMenu || findByDisplayName("MessageContextMenu");
+
+        if (!MessageContextMenu) return;
 
         patcher.after("default", MessageContextMenu, ([{ message }], res) => {
             const isTranslated = cache.has(message.id);
 
-            // Thêm tùy chọn vào cuối danh sách menu
-            res.props.children.push(
-                <ActionSheetItem
-                    label={isTranslated ? "Xem bản gốc (Return)" : "Dịch sang tiếng Việt"}
-                    onPress={async () => {
-                        ActionSheet.hideActionSheet(); // Đóng menu sau khi chọn
+            // Thêm nút vào menu
+            const items = res.props?.children?.props?.children || res.props?.children;
+            if (Array.isArray(items)) {
+                items.push(
+                    <ActionSheetItem
+                        label={isTranslated ? "Xem bản gốc" : "Dịch sang tiếng Việt"}
+                        onPress={async () => {
+                            ActionSheet.hideActionSheet();
+
+                            if (isTranslated) {
+                                const original = cache.get(message.id);
+                                dispatch({
+                                    type: "MESSAGE_UPDATE",
+                                    message: { id: message.id, channel_id: message.channel_id, content: original }
+                                });
+                                cache.delete(message.id);
+                                toast.show("Đã khôi phục");
+                            } else {
+                                toast.show("Đang dịch...");
+                                const result = await translate(message.content);
+                                if (result) {
+                                    cache.set(message.id, message.content);
+                                    dispatch({
+                                        type: "MESSAGE_UPDATE",
+                                        message: { id: message.id, channel_id: message.channel_id, content: result }
+                                    });
+                                    toast.show("Đã dịch xong!");
+                                } else {
+                                    toast.show("Lỗi kết nối!");
+                                }
+                            }
+                        }}
+                    />
+                );
+            }
+        });
+    },
+    onUnload: () => {
+        patcher.unpatchAll();
+        cache.clear();
+    }
+};
 
                         if (isTranslated) {
                             // Khôi phục
