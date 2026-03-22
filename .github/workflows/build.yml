@@ -1,8 +1,12 @@
-name: QuickTranslate-VN
+name: Build Plugin cho Vui
 on:
   push:
     branches:
       - main
+
+permissions:
+  contents: write  # Cấp quyền ghi để tạo nhánh gh-pages
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -11,12 +15,16 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+          
       - name: Build Plugin
         run: |
+          # Dùng npx để tự động tải và chạy vd-cli mà không cần cài đặt rườm rà
           npx vd-cli build
+          
       - name: Deploy
         uses: JamesIves/github-pages-deploy-action@v4
         with:
-          folder: . # Đẩy toàn bộ nội dung sau khi build
+          folder: . 
           branch: gh-pages
           clean: true
+          
